@@ -1,0 +1,11 @@
+services:
+  database:
+    image: postgres:13.16
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=database
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker-data/database/:/var/lib/postgresql/data
