@@ -1,0 +1,108 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Water Quality Map</h1>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([55.7558, 37.6173], 6);  // Центр карты (например, Москва)
+
+        // Добавляем слой карты (например, OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Получаем данные с вашего FastAPI сервера
+        fetch("/api/v1/waterquality/")  // Ваш endpoint для получения данных
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(function (entry) {
+                    // Формируем контент всплывающего окна для каждого маркера
+                    var popupContent = `
+                        <b>Model:</b> ${entry.model} <br>
+                        <b>pH:</b> ${entry.ph} <br>
+                        <b>DO:</b> ${entry.do} <br>
+                        <b>Nitrates:</b> ${entry.nitrates} <br>
+                        <b>Phosphates:</b> ${entry.phosphates} <br>
+                    `;
+                    // Создаем маркер и добавляем его на карту
+                    var marker = L.marker([entry.latitude, entry.longitude]).addTo(map);
+                    marker.bindPopup(popupContent);
+                });
+            })
+            .catch(error => console.log('Error fetching water quality data:', error));
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([43.585472, 39.723098], 10); // Центр Москвы и зум
+    
+        // Добавление слоя карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+    
+        // Создаем кастомный маркер с увеличенным размером
+        var customIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',  // Путь к стандартному маркеру
+            iconSize: [48, 48], // Размер маркера [ширина, высота]
+            iconAnchor: [24, 48], // Точка привязки маркера (центр по ширине и низ по высоте)
+            popupAnchor: [0, -48], // Где всплывающее окно будет появляться относительно маркера
+        });
+    
+        // Получаем данные с API
+        fetch('http://localhost:8000/api/v1/waterquality/map/')
+            .then(response => response.json())
+            .then(data => {
+                // Для каждой точки на карте добавляем маркер
+                data.forEach(item => {
+                    // Добавляем маркер с кастомным значком для каждой точки
+                    L.marker([item.latitude, item.longitude], { icon: customIcon })
+                        .addTo(map)
+                        .bindPopup(`
+                            <b>Water Quality Code: ${item.waterquality_code}</b><br>
+                            <b>Model: ${item.model}</b><br>
+                            pH: ${item.ph}<br>
+                            DO: ${item.do}<br>
+                            Nitrates: ${item.nitrates}<br>
+                            Phosphates: ${item.phosphates}
+                        `);
+                });
+            })
+            .catch(error => console.error('Error fetching water quality data:', error));
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!-- <!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта качества воды</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #map { height: 400px; width: 100%; }
+        canvas { max-width: 100%; height: 200px; }
+    </style>
+</head>
+<body>
+    <h2>Карта качества воды</h2>
+    <div id="map"></div>
+    <h3>График изменений pH</h3>
+    <canvas id="phChart"></canvas>
+
+    <script>
+        const map = L.map('map').setView([55.75, 37.57], 5);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        
+        let markers = [];
+        let phData = [];
+        let labels = [];
+        
+        const ctx = document.getElementById('phChart').getContext('2d');
+        const phChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'pH',
+                    data: phData,
+                    borderColor: 'blue',
+                    fill: false
+                }]
+            }
+        });
+
+        function updateChart(newLabel, newPh) {
+            labels.push(newLabel);
+            phData.push(newPh);
+            if (labels.length > 10) {
+                labels.shift();
+                phData.shift();
+            }
+            phChart.update();
+        }
+
+        function updateMap(data) {
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = data.map(point => {
+                const marker = L.marker([point.latitude, point.longitude]).addTo(map);
+                marker.bindPopup(`
+                    <strong>${point.model}</strong><br>
+                    pH: ${point.ph}<br>
+                    DO: ${point.do}<br>
+                    Нитраты: ${point.nitrates}<br>
+                    Фосфаты: ${point.phosphates}
+                `);
+                return marker;
+            });
+
+            if (data.length > 0) {
+                updateChart(new Date().toLocaleTimeString(), data[0].ph);
+            }
+        }
+
+        // const ws = new WebSocket("ws://localhost:8000/ws/waterquality/");
+
+        // ws.onmessage = (event) => {
+        //     const newData = JSON.parse(event.data);
+        //     updateMap(newData);
+        // };
+        const ws = new WebSocket("ws://localhost:8000/ws/waterquality/");
+
+        ws.onopen = () => console.log(" WebSocket подключен");
+        ws.onerror = (error) => console.error(" WebSocket ошибка:", error);
+        ws.onclose = () => console.log(" WebSocket закрыт");
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log(" Данные получены:", data);
+            } catch (err) {
+                console.error("Ошибка обработки JSON:", err);
+            }
+        };
+
+    </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/chart.js"></script>
+    <style>
+        #map { height: 50vh; }
+        #chart-container { height: 40vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="chart-container">
+        <canvas id="qualityChart"></canvas>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([43.585472, 39.723098], 10); // Центр Москвы и зум
+
+        // Добавление слоя карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        let selectedModel = null;
+        let waterData = [];
+
+        // Получаем данные с API
+        fetch('http://localhost:8000/api/v1/waterquality/map/')
+            .then(response => response.json())
+            .then(data => {
+                waterData = data;
+                data.forEach(item => {
+                    // Добавление маркеров на карту
+                    L.marker([item.latitude, item.longitude])
+                        .addTo(map)
+                        .bindPopup(`
+                            <b>Water Quality Code: ${item.waterquality_code}</b><br>
+                            <b>Model: ${item.model}</b><br>
+                            pH: ${item.ph}<br>
+                            DO: ${item.do}<br>
+                            Nitrates: ${item.nitrates}<br>
+                            Phosphates: ${item.phosphates}<br>
+                        `)
+                        .on('click', function() {
+                            selectedModel = item.model;
+                            updateChart();
+                        });
+                });
+            })
+            .catch(error => console.error('Error fetching water quality data:', error));
+
+        // График с данными по выбранному городу (модели)
+        const ctx = document.getElementById('qualityChart').getContext('2d');
+        let qualityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'pH',
+                        data: [],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'DO',
+                        data: [],
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'Nitrates',
+                        data: [],
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'Phosphates',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }
+                ]
+            }
+        });
+
+        function updateChart() {
+            // Фильтруем данные по выбранной модели (городу)
+            const filteredData = waterData.filter(item => item.model === selectedModel);
+            const labels = filteredData.map(item => item.waterquality_code);
+            const phData = filteredData.map(item => item.ph);
+            const doData = filteredData.map(item => item.do);
+            const nitratesData = filteredData.map(item => item.nitrates);
+            const phosphatesData = filteredData.map(item => item.phosphates);
+
+            // Обновляем данные на графике
+            qualityChart.data.labels = labels;
+            qualityChart.data.datasets[0].data = phData;
+            qualityChart.data.datasets[1].data = doData;
+            qualityChart.data.datasets[2].data = nitratesData;
+            qualityChart.data.datasets[3].data = phosphatesData;
+            qualityChart.update();
+        }
+    </script>
+</body>
+</html>

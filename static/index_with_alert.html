@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map { height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([43.585472, 39.723098], 10); // Центр Москвы и зум
+
+        // Добавление слоя карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Функция для проверки критичных значений
+        function isCritical(item) {
+            const criticalThresholds = {
+                ph: { min: 6.5, max: 8.5 },
+                do: { min: 4, max: 12 },
+                nitrates: { max: 19 },
+                phosphates: { max: 10 }
+            };
+
+            const criticalStatus = {
+                ph: item.ph < criticalThresholds.ph.min || item.ph > criticalThresholds.ph.max,
+                do: item.do < criticalThresholds.do.min || item.do > criticalThresholds.do.max,
+                nitrates: item.nitrates > criticalThresholds.nitrates.max,
+                phosphates: item.phosphates > criticalThresholds.phosphates.max
+            };
+
+            return criticalStatus;
+        }
+
+        // Функция для отправки уведомления
+        function sendNotification(message) {
+            if (Notification.permission === "granted") {
+                new Notification("Water Quality Alert", {
+                    body: message,
+                    icon: "https://your-icon-url.com/icon.png"
+                });
+            } else {
+                console.log("Notification permission denied.");
+            }
+        }
+
+        // Получаем данные с API
+        fetch('http://localhost:8000/api/v1/waterquality/map/')
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(item => {
+                    // Проверка на критические значения
+                    const criticalStatus = isCritical(item);
+                    const criticalMessage = Object.keys(criticalStatus)
+                        .filter(key => criticalStatus[key])
+                        .map(key => `${key.toUpperCase()} exceeded the limit!`)
+                        .join(', ');
+
+                    // Если есть критические значения, отправляем уведомление
+                    if (criticalMessage) {
+                        sendNotification(`Critical levels detected: ${criticalMessage}`);
+                    }
+
+                    // Отображение маркеров и всплывающих окон
+                    const popupContent = `
+                        <b>Water Quality Code: ${item.waterquality_code}</b><br>
+                        <b>Model: ${item.model}</b><br>
+                        pH: ${item.ph}<br>
+                        DO: ${item.do}<br>
+                        Nitrates: ${item.nitrates}<br>
+                        Phosphates: ${item.phosphates}<br>
+                        ${criticalMessage ? `<b style="color:red;">Critical levels: <br>${criticalMessage}</b>` : ''}
+                    `;
+
+                    const popup = L.popup()
+                        .setContent(popupContent);
+
+                    L.marker([item.latitude, item.longitude])
+                        .addTo(map)
+                        .bindPopup(popup)
+                        .openPopup();
+                });
+            })
+            .catch(error => console.error('Error fetching water quality data:', error));
+
+        // Запрашиваем разрешение на уведомления
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    console.log("Notification permission granted.");
+                } else {
+                    console.log("Notification permission denied.");
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

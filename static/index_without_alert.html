@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        #map { height: 100vh; }
+        canvas {
+            width: 200px !important;
+            height: 200px !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Инициализация карты
+        var map = L.map('map').setView([43.585472, 39.723098], 10); // Центр карты и зум
+
+        // Добавление слоя карты
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Создаем кастомный маркер с увеличенным размером
+        var customIcon = L.icon({
+            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+            iconSize: [48, 48],
+            iconAnchor: [24, 48],
+            popupAnchor: [0, -48],
+        });
+
+        // Функция для создания круговой диаграммы
+        function createPieChart(data) {
+            const canvas = document.createElement('canvas');
+            new Chart(canvas, {
+                type: 'pie',
+                data: {
+                    labels: ['pH', 'DO', 'Nitrates', 'Phosphates'],
+                    datasets: [{
+                        data: [data.ph, data.do, data.nitrates, data.phosphates],
+                        backgroundColor: ['#FF6347', '#4682B4', '#32CD32', '#FFD700']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+            return canvas;
+        }
+
+        // Получаем данные с API
+        fetch('http://localhost:8000/api/v1/waterquality/map/')
+            .then(response => response.json())
+            .then(data => {
+                // Для каждой точки на карте добавляем маркер с диаграммой
+                data.forEach(item => {
+                    const pieChart = createPieChart(item);
+
+                    // Создаем всплывающее окно с диаграммой
+                    const popup = L.popup()
+                        .setContent(pieChart);  // Добавляем диаграмму в всплывающее окно
+
+                    // Устанавливаем максимальную ширину и высоту для всплывающего окна
+                    popup.options.maxWidth = 250;  // Установим максимальную ширину
+                    popup.options.maxHeight = 250;  // Установим максимальную высоту
+
+                    // Добавляем маркер с кастомным значком
+                    L.marker([item.latitude, item.longitude], { icon: customIcon })
+                        .addTo(map)
+                        .bindPopup(popup)  // Привязываем всплывающее окно к маркеру
+                        .openPopup();
+                });
+            })
+            .catch(error => console.error('Error fetching water quality data:', error));
+    </script>
+    
+</body>
+</html>
