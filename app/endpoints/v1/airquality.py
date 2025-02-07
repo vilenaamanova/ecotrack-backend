@@ -1,18 +1,13 @@
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
 import os
 from datetime import datetime
 from app.services.airquality import AirqualityServiceDep
+from app.schemas.airquality import WeatherAirQuality, WeatherAirQualityCreate
+import requests
 
 router = APIRouter(tags=['Airquality'])
 
-
-from app.schemas.airquality import WeatherAirQuality, WeatherAirQualityCreate
-# from app.services import airquality as crud
-import requests
 
 @router.post("/weather-air-quality/")
 async def create_weather_air_quality(
@@ -20,6 +15,7 @@ async def create_weather_air_quality(
     data: WeatherAirQualityCreate,
 ) -> WeatherAirQuality:
     return await airquality_service.create_weather_air_quality(data)
+
 
 @router.get("/weather-air-quality/")
 async def read_weather_air_quality(
@@ -32,17 +28,16 @@ async def read_weather_air_quality(
 
 @router.get("/fetch-weather-air-quality/")
 async def fetch_and_save_weather_air_quality(
-    lat: float, # Annotated[float, Path(title="Latitude of airquality")
+    lat: float,
     lon: float,
     airquality_service: AirqualityServiceDep,
-    ):
+):
     try:
         api_key = os.getenv("OPENWEATHERMAP_API_KEY")
         weather_data = await airquality_service.fetch_weather_data(lat, lon, api_key)
         air_pollution_data = await airquality_service.fetch_air_quality_data(lat, lon, api_key)
         if not weather_data or not air_pollution_data:
             raise HTTPException(status_code=500, detail="Failed to fetch valid data from APIs")
-        # Сохраняем данные в базу данных
         weather_air_quality = WeatherAirQualityCreate(
             location=f"Lat: {lat}, Lon {lon}",
             timestamp=datetime.now().replace(tzinfo=None),
@@ -71,9 +66,7 @@ async def fetch_and_save_weather_air_quality(
 
         return {"message": "Weather and air quality data fetched and saved successfully"}
     except requests.exceptions.RequestException as e:
-        # Ловим ошибки, если запрос к API не удался
         raise HTTPException(status_code=500, detail=f"Error with API request: {str(e)}")
     
     except Exception as e:
-        # Обрабатываем любые другие ошибки
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")

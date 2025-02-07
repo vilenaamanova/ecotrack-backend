@@ -3,6 +3,7 @@ from .base import Base
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 
+
 class WeatherAirQuality(Base):
     __tablename__ = "weather"
     
@@ -29,28 +30,3 @@ class WeatherAirQuality(Base):
     pm25: Mapped[float] = mapped_column(Float)
     so2: Mapped[float] = mapped_column(Float)
     nh3: Mapped[float] = mapped_column(Float)
-
-
-# from sqlalchemy.orm import Mapped, mapped_column
-# from .base import Base
-
-# class Aircraft(Base):
-#     __tablename__ = 'aircrafts'
-#     aircraft_code: Mapped[str] = mapped_column(primary_key=True)
-#     model: Mapped[str]
-#     range: Mapped[int]
-
-# from sqlalchemy.orm import Mapped, mapped_column
-# from sqlalchemy import String, Integer, Float
-# from .base import Base
-
-# class Airquality(Base):
-#     __tablename__ = "airquality"
-
-#     airquality_code: Mapped[str] = mapped_column(String, primary_key=True)
-#     model: Mapped[str] = mapped_column(String, nullable=False)
-#     # range: Mapped[int] = mapped_column(Integer, nullable=False)
-#     pm2_5: Mapped[float] = mapped_column(Float, nullable=False)
-#     pm_10: Mapped[float] = mapped_column(Float, nullable=False)
-#     co: Mapped[float] = mapped_column(Float, nullable=False)
-#     no2: Mapped[float] = mapped_column(Float, nullable=False)

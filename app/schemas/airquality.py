@@ -1,9 +1,6 @@
 from pydantic import BaseModel
-from .base import BaseEntitySchema
-
-
-from pydantic import BaseModel
 from datetime import datetime
+
 
 class WeatherAirQualityBase(BaseModel):
     location: str

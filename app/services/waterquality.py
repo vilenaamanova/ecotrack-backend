@@ -6,8 +6,8 @@ from app.schemas.waterquality import Waterquality, WaterqualityCreate, Waterqual
 from app.repo.session import SessionDep
 from app.entities.waterquality import Waterquality as WaterqualityEntity
 
-# Список для хранения активных подключений
 active_connections = []
+
 
 class WaterqualityService:
     def __init__(self, session: AsyncSession) -> None:
@@ -42,23 +42,11 @@ class WaterqualityService:
         stmt = delete(WaterqualityEntity)
         await self.session.execute(stmt)
 
-    # async def send_data_to_clients(self, data: dict):
-    #     # Отправка данных всем активным подключенным WebSocket-клиентам
-    #     for connection in active_connections:
-    #         await connection.send_json(data)
-
-    # async def read_by_location(self, latitude: float, longitude: float) -> list[Waterquality]:
-    #     stmt = select(WaterqualityEntity).filter(
-    #         WaterqualityEntity.latitude == latitude, 
-    #         WaterqualityEntity.longitude == longitude
-    #     )
-    #     result = await self.session.execute(stmt)
-    #     return [Waterquality.model_validate(data, from_attributes=True) for data in result.scalars().all()]
-
     async def read_by_city(self, city: str) -> list[Waterquality]:
         stmt = select(WaterqualityEntity).filter(WaterqualityEntity.model == city)
         result = await self.session.execute(stmt)
         return [Waterquality.model_validate(data, from_attributes=True) for data in result.scalars().all()]
+
 
 async def get_waterquality_service(session: SessionDep):
     yield WaterqualityService(session)

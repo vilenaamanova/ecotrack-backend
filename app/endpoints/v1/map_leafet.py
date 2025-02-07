@@ -7,10 +7,8 @@ router = APIRouter(tags=['mapWaterquality'])
 async def get_waterquality_map(
     waterquality_service: WaterqualityServiceDep,
 ) -> list[dict]:
-    # Получаем все данные для отображения на карте
     waterquality_data = await waterquality_service.read_many()
 
-    # Формируем данные в формате, который будет использован на карте
     map_data = [
         {
             "waterquality_code": item.waterquality_code,

@@ -1,0 +1,29 @@
+[project]
+name = "ec"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "DilaraG",email = "dilara-a@mail.ru"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi[all] (>=0.115.8,<0.116.0)",
+    "uvicorn[standard] (>=0.34.0,<0.35.0)",
+    "sqlalchemy (>=2.0.37,<3.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "asyncpg (>=0.30.0,<0.31.0)",
+    "python-dotenv (>=1.0.1,<2.0.0)",
+    "alembic (>=1.14.1,<2.0.0)",
+    "greenlet (>=3.1.1,<4.0.0)",
+    "faker (>=35.2.0,<36.0.0)",
+    "folium (>=0.19.4,<0.20.0)",
+    "vega (>=4.1.0,<5.0.0)",
+    "matplotlib (>=3.10.0,<4.0.0)",
+    "websockets (>=14.2,<15.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
